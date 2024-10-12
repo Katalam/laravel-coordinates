@@ -19,9 +19,6 @@ class CoordinatesServiceProvider extends PackageServiceProvider
          */
         $package
             ->name('laravel-coordinates')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_laravel_coordinates_table')
-            ->hasCommand(CoordinatesCommand::class);
+            ->hasConfigFile();
     }
 }
