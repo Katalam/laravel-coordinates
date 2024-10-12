@@ -11,7 +11,7 @@ it('can return the enum cases', function () {
         ->toHaveCount(3)
         ->toEqual([
             'DMS',
-            'DM',
+            'DDM',
             'UTM',
         ]);
 });
