@@ -28,7 +28,7 @@ readonly class LatLngToUTM
     /**
      * Convert Latitude and Longitude to UTM
      *
-     * Implementation of Karney's method, using Krüger series to order 6.
+     * Implementation of Karney's method, using Krüger series to order 8.
      * Giving results accurate to 5 nm for distances up to 3900 km from the central meridian.
      *
      * @see https://www.mygeodesy.id.au/documents/Karney-Krueger%20equations.pdf
@@ -99,10 +99,12 @@ readonly class LatLngToUTM
         $n4 = $n3 * $n;
         $n5 = $n4 * $n;
         $n6 = $n5 * $n;
+        $n7 = $n6 * $n;
+        $n8 = $n7 * $n;
 
         $cosLongitude = cos($longitudeRad);
         $sinLongitude = sin($longitudeRad);
-        $tanLongitude = tan($longitudeRad);
+//        $tanLongitude = tan($longitudeRad);
 
         $tanLatitude = tan($latitudeRad); // tau
         $sigma = sinh($eccentricity * atanh($eccentricity * $tanLatitude / sqrt(1 + $tanLatitude ** 2)));
@@ -123,15 +125,17 @@ readonly class LatLngToUTM
             61 * $n3 / 240 - 103 * $n4 / 140 + 15_061 * $n5 / 26_880 + 167_603 * $n6 / 181_440,
             49_561 * $n4 / 161_280 - 179 * $n5 / 168 + 6_601_661 * $n6 / 7_257_600,
             34_729 * $n5 / 80_640 - 3_418_889 * $n6 / 1_995_840,
-            212_378_941 * $n6 / 319_334_400,
+            212_378_941 * $n6 / 319_334_400 - 30_705_481 * $n7 / 10_378_368 + 2_605_413_599 * $n8 / 58_118_860_800,
+            1_522_256_789 * $n7 / 1_383_782_400 - 16_759_934_899 * $n8 / 3_113_510_400,
+            1_424_729_850_961 * $n8 / 743_921_418_240,
         ];
 
         $xi = $xiPrime;
-        for ($i = 1; $i <= 6; $i++) {
+        for ($i = 1; $i <= 8; $i++) {
             $xi += $alpha[$i] * sin(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
         }
         $eta = $etaPrime;
-        for ($i = 1; $i <= 6; $i++) {
+        for ($i = 1; $i <= 8; $i++) {
             $eta += $alpha[$i] * cos(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
         }
 
@@ -140,27 +144,25 @@ readonly class LatLngToUTM
 
         // Karney 2011 Eq 23, 24
 
-        $pPrime = 1;
-        for ($i = 1; $i <= 6; $i++) {
-            $pPrime += 2 * $i * $alpha[$i] * cos(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
-        }
-        $qPrime = 0;
-        for ($i = 1; $i <= 6; $i++) {
-            $qPrime += 2 * $i * $alpha[$i] * sin(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
-        }
+//        $pPrime = 1;
+//        for ($i = 1; $i <= 6; $i++) {
+//            $pPrime += 2 * $i * $alpha[$i] * cos(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
+//        }
+//        $qPrime = 0;
+//        for ($i = 1; $i <= 6; $i++) {
+//            $qPrime += 2 * $i * $alpha[$i] * sin(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
+//        }
 
-        $gammaPrime = atan($tauPrime / sqrt(1 + $tauPrime ** 2) * $tanLongitude);
-        $gammaPrimePrime = atan2($qPrime, $pPrime);
-
-        $gamma = $gammaPrime + $gammaPrimePrime;
+//        $gammaPrime = atan($tauPrime / sqrt(1 + $tauPrime ** 2) * $tanLongitude);
+//        $gammaPrimePrime = atan2($qPrime, $pPrime);
+//
+//        $gamma = $gammaPrime + $gammaPrimePrime;
 
         // Karney 2011 Eq 25
 
-        $sinLatitude = sin($latitudeRad);
-        $kPrime = sqrt(1 - self::MAGNITUDE_OF_FLATTENING ** 2 * $sinLatitude ** 2) * sqrt(1 + $tanLatitude ** 2) / sqrt($tauPrime ** 2 + $cosLongitude ** 2);
-        $kPrimePrime = $A / self::EQUATORIAL_RADIUS * sqrt($pPrime ** 2 + $qPrime ** 2);
-
-        $k = self::UTM_SCALE_CENTRAL_MERIDIAN * $kPrime * $kPrimePrime;
+//        $sinLatitude = sin($latitudeRad);
+//        $kPrime = sqrt(1 - self::MAGNITUDE_OF_FLATTENING ** 2 * $sinLatitude ** 2) * sqrt(1 + $tanLatitude ** 2) / sqrt($tauPrime ** 2 + $cosLongitude ** 2);
+//        $kPrimePrime = $A / self::EQUATORIAL_RADIUS * sqrt($pPrime ** 2 + $qPrime ** 2);
 
         // shift x/y to UTM grid
         $x += 500_000;
@@ -174,7 +176,7 @@ readonly class LatLngToUTM
         $y = round($y, $precision, PHP_ROUND_HALF_DOWN);
 
         return sprintf(
-            "%d%s %.{$precision}f %.{$precision}f",
+            "%2d%s %.{$precision}f %.{$precision}f",
             $zone,
             $letter,
             $x,
