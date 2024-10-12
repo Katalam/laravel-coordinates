@@ -8,11 +8,10 @@ it('can return the enum cases', function () {
     $cases = CoordinateFormat::values();
 
     expect($cases)->toBeArray()
-        ->toHaveCount(4)
+        ->toHaveCount(3)
         ->toEqual([
             'DMS',
             'DM',
-            'DEC',
             'UTM',
         ]);
 });
