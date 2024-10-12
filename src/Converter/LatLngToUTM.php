@@ -90,10 +90,11 @@ readonly class LatLngToUTM
         }
 
         $latitudeRad = deg2rad($this->latitude);
-        $longitudeRad = deg2rad($this->longitude) - $zoneCentralMeridian;
 
+        // 1. Compute the ellipsoidal parameters
         $eccentricity = sqrt(self::MAGNITUDE_OF_FLATTENING * (2 - self::MAGNITUDE_OF_FLATTENING));
         $n = self::MAGNITUDE_OF_FLATTENING / (2 - self::MAGNITUDE_OF_FLATTENING);
+
         $n2 = $n * $n;
         $n3 = $n2 * $n;
         $n4 = $n3 * $n;
@@ -102,22 +103,11 @@ readonly class LatLngToUTM
         $n7 = $n6 * $n;
         $n8 = $n7 * $n;
 
-        $cosLongitude = cos($longitudeRad);
-        $sinLongitude = sin($longitudeRad);
-//        $tanLongitude = tan($longitudeRad);
+        // 2. Compute the rectifying radius A
+        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256 + 25 * $n8 / 16384);
 
-        $tanLatitude = tan($latitudeRad); // tau
-        $sigma = sinh($eccentricity * atanh($eccentricity * $tanLatitude / sqrt(1 + $tanLatitude ** 2)));
-
-        $tauPrime = $tanLatitude * sqrt(1 + $sigma ** 2) - $sigma * sqrt(1 + $tanLatitude ** 2);
-
-        $xiPrime = atan2($tauPrime, $cosLongitude);
-        $etaPrime = asinh($sinLongitude / sqrt($tauPrime ** 2 + $cosLongitude ** 2));
-
-        // 2πA is the circumference of a meridian
-        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256);
-
-        // note α is one-based array (6th order Krüger expressions)
+        // note α is one-based array (8th order Krüger expressions)
+        // 3. Compute the coefficients α to 8th order
         $alpha = [
             null,
             $n / 2 - 2 * $n2 / 3 + 5 * $n3 / 16 + 41 * $n4 / 180 - 127 * $n5 / 288 + 7_891 * $n6 / 37_800,
@@ -130,6 +120,21 @@ readonly class LatLngToUTM
             1_424_729_850_961 * $n8 / 743_921_418_240,
         ];
 
+        // 4. Compute the conformal latitude
+        $tanLatitude = tan($latitudeRad); // tau
+        $sigma = sinh($eccentricity * atanh($eccentricity * $tanLatitude / sqrt(1 + $tanLatitude ** 2)));
+        $tauPrime = $tanLatitude * sqrt(1 + $sigma ** 2) - $sigma * sqrt(1 + $tanLatitude ** 2);
+
+        // 5. Compute the longitude difference
+        $longitudeRad = deg2rad($this->longitude) - $zoneCentralMeridian;
+
+        // 6. Compute the Gauss-Schreiber ratios xi' = X' / A and eta' = Y' / A to order 8
+        $cosLongitude = cos($longitudeRad);
+        $sinLongitude = sin($longitudeRad);
+        $xiPrime = atan2($tauPrime, $cosLongitude);
+        $etaPrime = asinh($sinLongitude / sqrt($tauPrime ** 2 + $cosLongitude ** 2));
+
+        // 7. Compute the transverse Mercator (TM) ratios xi = X / A and eta = Y / A to order 8
         $xi = $xiPrime;
         for ($i = 1; $i <= 8; $i++) {
             $xi += $alpha[$i] * sin(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
@@ -139,48 +144,47 @@ readonly class LatLngToUTM
             $eta += $alpha[$i] * cos(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
         }
 
-        $x = self::UTM_SCALE_CENTRAL_MERIDIAN * $A * $eta;
-        $y = self::UTM_SCALE_CENTRAL_MERIDIAN * $A * $xi;
+        // 8. Compute the TM coordinates x, y
+        $x = $A * $eta;
+        $y = $A * $xi;
 
-        // Karney 2011 Eq 23, 24
-
-//        $pPrime = 1;
-//        for ($i = 1; $i <= 6; $i++) {
-//            $pPrime += 2 * $i * $alpha[$i] * cos(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
-//        }
-//        $qPrime = 0;
-//        for ($i = 1; $i <= 6; $i++) {
-//            $qPrime += 2 * $i * $alpha[$i] * sin(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
-//        }
-
-//        $gammaPrime = atan($tauPrime / sqrt(1 + $tauPrime ** 2) * $tanLongitude);
-//        $gammaPrimePrime = atan2($qPrime, $pPrime);
-//
-//        $gamma = $gammaPrime + $gammaPrimePrime;
-
-        // Karney 2011 Eq 25
-
-//        $sinLatitude = sin($latitudeRad);
-//        $kPrime = sqrt(1 - self::MAGNITUDE_OF_FLATTENING ** 2 * $sinLatitude ** 2) * sqrt(1 + $tanLatitude ** 2) / sqrt($tauPrime ** 2 + $cosLongitude ** 2);
-//        $kPrimePrime = $A / self::EQUATORIAL_RADIUS * sqrt($pPrime ** 2 + $qPrime ** 2);
-
-        // shift x/y to UTM grid
-        $x += 500_000;
-        if ($y < 0) {
-            $y += 10_000_000;
-        }
+        // 9. Compute grid coordinates e, n
+        $e = self::UTM_SCALE_CENTRAL_MERIDIAN * $x + 500_000;
+        $n = self::UTM_SCALE_CENTRAL_MERIDIAN * $y + ($this->latitude < 0 ? 10_000_000 : 0);
 
         $precision = $this->precision > -1 ? $this->precision : 9;
 
-        $x = round($x, $precision, PHP_ROUND_HALF_DOWN);
-        $y = round($y, $precision, PHP_ROUND_HALF_DOWN);
+        $e = round($e, $precision, PHP_ROUND_HALF_DOWN);
+        $n = round($n, $precision, PHP_ROUND_HALF_DOWN);
+
+        // 10. Compute factors p and 1 to order 8
+        // $pPrime = 1;
+        // for ($i = 1; $i <= 8; $i++) {
+        //    $pPrime += 2 * $i * $alpha[$i] * cos(2 * $i * $xiPrime) * cosh(2 * $i * $etaPrime);
+        // }
+        // $qPrime = 0;
+        // for ($i = 1; $i <= 8; $i++) {
+        //    $qPrime += 2 * $i * $alpha[$i] * sin(2 * $i * $xiPrime) * sinh(2 * $i * $etaPrime);
+        // }
+
+        // 11. Compute point scale factor
+        // $sinLatitude = sin($latitudeRad);
+        // $kPrime = sqrt(1 + $tanLatitude ** 2) * sqrt(1 - self::MAGNITUDE_OF_FLATTENING ** 2 * $sinLatitude ** 2) / sqrt($tauPrime ** 2 + $cosLongitude ** 2);
+        // $kPrimePrime = $A / self::EQUATORIAL_RADIUS * sqrt($pPrime ** 2 + $qPrime ** 2);
+        // $k = self::UTM_SCALE_CENTRAL_MERIDIAN * $kPrime * $kPrimePrime;
+
+        // 12. Compute grid convergence
+        // $tanLongitude = tan($longitudeRad);
+        // $gammaPrime = atan($tauPrime * $tanLongitude / sqrt(1 + $tauPrime ** 2));
+        // $gammaPrimePrime = atan2($qPrime, $pPrime);
+        // $gamma = $gammaPrime + $gammaPrimePrime;
 
         return sprintf(
             "%2d%s %.{$precision}f %.{$precision}f",
             $zone,
             $letter,
-            $x,
-            $y,
+            $e,
+            $n,
         );
     }
 }
