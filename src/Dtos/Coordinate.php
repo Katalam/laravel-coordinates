@@ -6,6 +6,7 @@ namespace Katalam\Coordinates\Dtos;
 
 use Katalam\Coordinates\Converter\LatLngToDDM;
 use Katalam\Coordinates\Converter\LatLngToDMS;
+use Katalam\Coordinates\Converter\LatLngToUTM;
 use Katalam\Coordinates\Enums\CoordinateFormat;
 
 class Coordinate
@@ -40,6 +41,7 @@ class Coordinate
         return match ($format) {
             CoordinateFormat::DMS => LatLngToDMS::make($this->latitude, $this->longitude, $precision)->run(),
             CoordinateFormat::DDM => LatLngToDDM::make($this->latitude, $this->longitude, $precision)->run(),
+            CoordinateFormat::UTM => LatLngToUTM::make($this->latitude, $this->longitude, $precision)->run(),
         };
     }
 }

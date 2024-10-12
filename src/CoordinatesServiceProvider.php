@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Katalam\Coordinates;
 
-use Katalam\Coordinates\Commands\CoordinatesCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
