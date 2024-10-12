@@ -170,8 +170,8 @@ readonly class LatLngToUTM
 
         $precision = $this->precision > -1 ? $this->precision : 9;
 
-        $x = round($x, $precision);
-        $y = round($y, $precision);
+        $x = round($x, $precision, PHP_ROUND_HALF_DOWN);
+        $y = round($y, $precision, PHP_ROUND_HALF_DOWN);
 
         return sprintf(
             "%d%s %.{$precision}f %.{$precision}f",
