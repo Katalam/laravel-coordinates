@@ -35,21 +35,6 @@ readonly class LatLngToUTM
      */
     public function run(): string
     {
-        /*
-         * Zone Number = [ Longitude + 180  / 6 ] + 1;
-         * Example:
-         * Longitude = 103.853612
-         * Zone Number = [ 103.853612 + 180  / 6 ] + 1 = 48
-         */
-        $zone = floor(($this->longitude + 180) / 6) + 1;
-
-        /*
-         * Latitude Band = (int) ( Latitude / 8 ) + 10;
-         * Example:
-         * Latitude = 1.366666
-         * Latitude Band = (int) ( 1.366666 / 8 ) + 10 = 10
-         * Latitude Band = J
-         */
         $indexLatitudeBand = (int) floor($this->latitude / 8 + 10);
         $letter = self::LATITUDE_BANDS[$indexLatitudeBand];
 

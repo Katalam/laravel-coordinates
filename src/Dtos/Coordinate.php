@@ -7,6 +7,7 @@ namespace Katalam\Coordinates\Dtos;
 use Katalam\Coordinates\Converter\LatLngToDDM;
 use Katalam\Coordinates\Converter\LatLngToDMS;
 use Katalam\Coordinates\Converter\LatLngToUTM;
+use Katalam\Coordinates\Converter\UTMToLatLng;
 use Katalam\Coordinates\Enums\CoordinateFormat;
 
 class Coordinate
@@ -19,6 +20,21 @@ class Coordinate
     {
         $this->latitude = $latitude;
         $this->longitude = $longitude;
+    }
+
+    public static function fromUTM(string $utm): self
+    {
+        $utmArray = explode(' ', $utm);
+        $zone = (int) substr($utmArray[0], 0, -1);
+        $latitudeBand = substr($utmArray[0], -1);
+        $easting = (float) $utmArray[1];
+        $northing = (float) $utmArray[2];
+
+        $coordinate = UTMToLatLng::make($zone, $latitudeBand, $easting, $northing)->run();
+
+        $coordinate = explode(' ', $coordinate);
+
+        return new self((float) $coordinate[1], (float) $coordinate[3]);
     }
 
     public static function make(float $latitude = 0, float $longitude = 0): self

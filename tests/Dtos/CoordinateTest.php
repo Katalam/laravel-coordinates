@@ -42,7 +42,7 @@ describe('DDM', function () {
 });
 
 describe('UTM', function () {
-    it('can convert', function (float $lat, float $long, int $precision, string $expected) {
+    it('can convert to utm', function (float $lat, float $long, int $precision, string $expected) {
         $coordinate = Coordinate::make($lat, $long);
 
         expect($coordinate->format(CoordinateFormat::UTM, $precision))->toBe($expected);
@@ -54,5 +54,16 @@ describe('UTM', function () {
             [52.51625340334874, 13.377625381177886, 2, '33U 389912.65 5819696.85'],
             [52.51625340334874, 13.377625381177886, 3, '33U 389912.653 5819696.850'],
             [52.51625340334874, 13.377625381177886, 4, '33U 389912.6532 5819696.8503'],
+        ]);
+
+    it('can convert from utm', function (float $expectedLat, float $expectedLng, string $utm) {
+        $coordinate = Coordinate::fromUTM($utm);
+
+        expect($coordinate->getLatitude())->toBe($expectedLat)
+            ->and($coordinate->getLongitude())->toBe($expectedLng);
+    })
+        ->with([
+            [52.516253, 13.377625, '33U 389912.6532014008 5819696.8503232850'],
+            [-17.978733, 18.457031, '34K 230690.325 8010321.788'],
         ]);
 });
