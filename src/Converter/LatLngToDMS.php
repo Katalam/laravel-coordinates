@@ -46,7 +46,7 @@ readonly class LatLngToDMS
     {
         $degree = floor($coordinate);
         $minutes = floor(($coordinate - $degree) * 60);
-        $seconds = ($coordinate - $degree - $minutes / 60) * 3600;
+        $seconds = ($coordinate - $degree - $minutes / 60) * 3_600;
 
         return [$degree, $minutes, $seconds];
     }

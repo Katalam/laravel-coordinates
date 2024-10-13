@@ -6,11 +6,11 @@ namespace Katalam\Coordinates\Converter;
 
 readonly class UTMToLatLng
 {
-    public const UTM_SCALE_CENTRAL_MERIDIAN = 0.9996;
+    public const UTM_SCALE_CENTRAL_MERIDIAN = 0.999_6;
 
-    public const EQUATORIAL_RADIUS = 6378137;
+    public const EQUATORIAL_RADIUS = 6_378_137;
 
-    public const MAGNITUDE_OF_FLATTENING = 1 / 298.257223563;
+    public const MAGNITUDE_OF_FLATTENING = 1 / 298.257_223_563;
 
     public const LATITUDE_BANDS = 'CDEFGHJKLMNPQRSTUVWXX'; // X is used for 80°N to 84°N
 
@@ -55,7 +55,7 @@ readonly class UTMToLatLng
         $n8 = $n7 * $n;
 
         // 2. Compute the rectifying radius A
-        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256 + 25 * $n8 / 16384);
+        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256 + 25 * $n8 / 16_384);
 
         // Note α is one-based array (8th order Krüger expressions)
         // 3. Compute the coefficients α to 8th order
@@ -78,11 +78,11 @@ readonly class UTMToLatLng
             -$n / 2 + 2 * $n2 / 3 - 37 * $n3 / 96 + $n4 / 360 + 81 * $n5 / 512 - 96_199 * $n6 / 604_800 + 5_406_467 * $n7 / 38_707_200 - 7_944_359 * $n8 / 67_737_600,
             -$n2 / 48 - $n3 / 15 + 437 * $n4 / 1_440 - 46 * $n5 / 105 + 111_871 * $n6 / 387_072 - 51_841 * $n7 / 1_209_600 - 24_749_483 * $n8 / 348_364_800,
             -17 * $n3 / 480 + 37 * $n4 / 840 + 209 * $n5 / 4_480 - 5_569 * $n6 / 90_720 - 9_261_899 * $n7 / 58_060_800 + 6_457_463 * $n8 / 17_740_800,
-            -4397 * $n4 / 161_280 + 11 * $n5 / 504 + 830_251 * $n6 / 7_257_600 - 466_511 * $n7 / 2_494_800 - 324_154_477 * $n8 / 7_664_025_600,
-            -4583 * $n5 / 161_280 + 108_847 * $n6 / 3_991_680 + 8_005_831 * $n7 / 63_866_880 - 22_894_433 * $n8 / 124_540_416,
-            -20_648_693 * $n6 / 638_668_800 + 16363163 * $n7 / 518918400 + 2204645983 * $n8 / 12915302400,
-            -219941297 * $n7 / 5535129600 + 497323811 * $n8 / 12454041600,
-            -191773887257 * $n8 / 3719607091200,
+            -4_397 * $n4 / 161_280 + 11 * $n5 / 504 + 830_251 * $n6 / 7_257_600 - 466_511 * $n7 / 2_494_800 - 324_154_477 * $n8 / 7_664_025_600,
+            -4_583 * $n5 / 161_280 + 108_847 * $n6 / 3_991_680 + 8_005_831 * $n7 / 63_866_880 - 22_894_433 * $n8 / 124_540_416,
+            -20_648_693 * $n6 / 638_668_800 + 16_363_163 * $n7 / 518_918_400 + 2_204_645_983 * $n8 / 12_915_302_400,
+            -219_941_297 * $n7 / 5_535_129_600 + 497_323_811 * $n8 / 12_454_041_600,
+            -191_773_887_257 * $n8 / 3_719_607_091_200,
         ];
 
         // 5. Compute the transverse Mercator X, Y coordinates

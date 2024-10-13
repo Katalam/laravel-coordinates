@@ -6,11 +6,11 @@ namespace Katalam\Coordinates\Converter;
 
 readonly class LatLngToUTM
 {
-    public const UTM_SCALE_CENTRAL_MERIDIAN = 0.9996;
+    public const UTM_SCALE_CENTRAL_MERIDIAN = 0.999_6;
 
-    public const EQUATORIAL_RADIUS = 6378137;
+    public const EQUATORIAL_RADIUS = 6_378_137;
 
-    public const MAGNITUDE_OF_FLATTENING = 1 / 298.257223563;
+    public const MAGNITUDE_OF_FLATTENING = 1 / 298.257_223_563;
 
     public const LATITUDE_BANDS = 'CDEFGHJKLMNPQRSTUVWXX'; // X is used for 80°N to 84°N
 
@@ -89,7 +89,7 @@ readonly class LatLngToUTM
         $n8 = $n7 * $n;
 
         // 2. Compute the rectifying radius A
-        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256 + 25 * $n8 / 16384);
+        $A = self::EQUATORIAL_RADIUS / (1 + $n) * (1 + $n2 / 4 + $n4 / 64 + $n6 / 256 + 25 * $n8 / 16_384);
 
         // note α is one-based array (8th order Krüger expressions)
         // 3. Compute the coefficients α to 8th order
