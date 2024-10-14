@@ -55,11 +55,14 @@ class UTM extends BaseCoordinate
     {
         $precision = $this->getPrecision($precision);
 
+        $e = round($this->getEasting(), $precision, PHP_ROUND_HALF_DOWN);
+        $n = round($this->getNorthing(), $precision, PHP_ROUND_HALF_DOWN);
+
         return sprintf("%d%s %.{$precision}f %.{$precision}f",
             $this->getZone(),
             $this->getLatitudeBand(),
-            $this->getEasting(),
-            $this->getNorthing(),
+            $e,
+            $n,
         );
     }
 
