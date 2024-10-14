@@ -52,4 +52,19 @@ class Coordinate
 
         return $this;
     }
+
+    public function jsonSerialize(): string
+    {
+        return $this->toString();
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
+    }
+
+    public function toString(int $precision = -1): string
+    {
+        return $this->value->toString($precision);
+    }
 }
