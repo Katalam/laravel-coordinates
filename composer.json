@@ -35,10 +35,7 @@
     "autoload": {
         "psr-4": {
             "Katalam\\Coordinates\\": "src/"
-        },
-        "files": [
-            "src/helpers.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {

@@ -4,39 +4,32 @@ declare(strict_types=1);
 
 namespace Katalam\Coordinates\Converter;
 
+use Katalam\Coordinates\Dtos\DDM;
+use Katalam\Coordinates\Dtos\LatLng;
+
 readonly class LatLngToDDM
 {
     public function __construct(
-        private float $latitude,
-        private float $longitude,
-        private int $precision = -1,
+        private LatLng $latLng,
     ) {}
 
-    public static function make(float $latitude, float $longitude, int $precision = -1): self
+    public static function make(LatLng $latLng): self
     {
-        return new self($latitude, $longitude, $precision);
+        return new self($latLng);
     }
 
-    public function run(): string
+    public function run(): DDM
     {
-        [$degreesLat, $minutesLat] = $this->convert($this->latitude);
-        [$degreesLng, $minutesLng] = $this->convert($this->longitude);
+        [$degreesLat, $minutesLat] = $this->convert($this->latLng->getLatitude());
+        [$degreesLng, $minutesLng] = $this->convert($this->latLng->getLongitude());
 
-        if ($this->precision >= 0) {
-            $minutesLat = $this->round($minutesLat, $this->precision);
-            $minutesLng = $this->round($minutesLng, $this->precision);
-        }
-
-        $precision = $this->precision > -1 ? $this->precision : 6;
-
-        return sprintf(
-            "%d°%.{$precision}f' %s, %d°%.{$precision}f' %s",
-            $degreesLat,
+        return new DDM(
+            (int) $degreesLat,
             $minutesLat,
-            $this->latitude >= 0 ? 'N' : 'S',
-            $degreesLng,
+            $this->latLng->getLatitude() >= 0 ? 'N' : 'S',
+            (int) $degreesLng,
             $minutesLng,
-            $this->longitude >= 0 ? 'E' : 'W'
+            $this->latLng->getLongitude() >= 0 ? 'E' : 'W'
         );
     }
 
@@ -46,10 +39,5 @@ readonly class LatLngToDDM
         $minutes = ($coordinate - $degree) * 60;
 
         return [$degree, $minutes];
-    }
-
-    private function round(float $value, int $precision): float
-    {
-        return round($value, $precision, PHP_ROUND_HALF_DOWN);
     }
 }

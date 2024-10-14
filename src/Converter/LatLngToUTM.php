@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Katalam\Coordinates\Converter;
 
+use Katalam\Coordinates\Dtos\LatLng;
+use Katalam\Coordinates\Dtos\UTM;
+
 readonly class LatLngToUTM
 {
     public const UTM_SCALE_CENTRAL_MERIDIAN = 0.999_6;
@@ -15,14 +18,12 @@ readonly class LatLngToUTM
     public const LATITUDE_BANDS = 'CDEFGHJKLMNPQRSTUVWXX'; // X is used for 80°N to 84°N
 
     public function __construct(
-        private float $latitude,
-        private float $longitude,
-        private int $precision = -1,
+        private LatLng $latLng,
     ) {}
 
-    public static function make(float $latitude, float $longitude, int $precision = -1): self
+    public static function make(LatLng $latLng): self
     {
-        return new self($latitude, $longitude, $precision);
+        return new self($latLng);
     }
 
     /**
@@ -33,48 +34,48 @@ readonly class LatLngToUTM
      *
      * @see https://www.mygeodesy.id.au/documents/Karney-Krueger%20equations.pdf
      */
-    public function run(): string
+    public function run(): UTM
     {
-        $indexLatitudeBand = (int) floor($this->latitude / 8 + 10);
+        $indexLatitudeBand = (int) floor($this->latLng->getLatitude() / 8 + 10);
         $letter = self::LATITUDE_BANDS[$indexLatitudeBand];
 
-        $zone = (int) floor(($this->longitude + 180) / 6) + 1;
+        $zone = (int) floor(($this->latLng->getLongitude() + 180) / 6) + 1;
 
         // + 3 puts origin in the middle of the zone
         $zoneCentralMeridian = deg2rad(($zone - 1) * 6 - 180 + 3);
 
         // Handle the special case of Norway
-        if ($zone === 31 && $letter === 'V' && $this->longitude >= 3) {
+        if ($zone === 31 && $letter === 'V' && $this->latLng->getLongitude() >= 3) {
             $zone++;
             $zoneCentralMeridian += deg2rad(6);
         }
         // Handle the special case of Svalbard
-        if ($zone === 32 && $letter === 'X' && $this->longitude < 9) {
+        if ($zone === 32 && $letter === 'X' && $this->latLng->getLongitude() < 9) {
             $zone--;
             $zoneCentralMeridian -= deg2rad(6);
         }
-        if ($zone === 32 && $letter === 'X' && $this->longitude >= 9) {
+        if ($zone === 32 && $letter === 'X' && $this->latLng->getLongitude() >= 9) {
             $zone++;
             $zoneCentralMeridian += deg2rad(6);
         }
-        if ($zone === 34 && $letter === 'X' && $this->longitude < 21) {
+        if ($zone === 34 && $letter === 'X' && $this->latLng->getLongitude() < 21) {
             $zone--;
             $zoneCentralMeridian -= deg2rad(6);
         }
-        if ($zone === 34 && $letter === 'X' && $this->longitude >= 21) {
+        if ($zone === 34 && $letter === 'X' && $this->latLng->getLongitude() >= 21) {
             $zone++;
             $zoneCentralMeridian += deg2rad(6);
         }
-        if ($zone === 36 && $letter === 'X' && $this->longitude < 33) {
+        if ($zone === 36 && $letter === 'X' && $this->latLng->getLongitude() < 33) {
             $zone--;
             $zoneCentralMeridian -= deg2rad(6);
         }
-        if ($zone === 36 && $letter === 'X' && $this->longitude >= 33) {
+        if ($zone === 36 && $letter === 'X' && $this->latLng->getLongitude() >= 33) {
             $zone++;
             $zoneCentralMeridian += deg2rad(6);
         }
 
-        $latitudeRad = deg2rad($this->latitude);
+        $latitudeRad = deg2rad($this->latLng->getLatitude());
 
         // 1. Compute the ellipsoidal parameters
         $eccentricity = sqrt(self::MAGNITUDE_OF_FLATTENING * (2 - self::MAGNITUDE_OF_FLATTENING));
@@ -111,7 +112,7 @@ readonly class LatLngToUTM
         $tauPrime = $tanLatitude * sqrt(1 + $sigma ** 2) - $sigma * sqrt(1 + $tanLatitude ** 2);
 
         // 5. Compute the longitude difference
-        $longitudeRad = deg2rad($this->longitude) - $zoneCentralMeridian;
+        $longitudeRad = deg2rad($this->latLng->getLongitude()) - $zoneCentralMeridian;
 
         // 6. Compute the Gauss-Schreiber ratios xi' = X' / A and eta' = Y' / A to order 8
         $cosLongitude = cos($longitudeRad);
@@ -135,12 +136,7 @@ readonly class LatLngToUTM
 
         // 9. Compute grid coordinates e, n
         $e = self::UTM_SCALE_CENTRAL_MERIDIAN * $x + 500_000;
-        $n = self::UTM_SCALE_CENTRAL_MERIDIAN * $y + ($this->latitude < 0 ? 10_000_000 : 0);
-
-        $precision = $this->precision > -1 ? $this->precision : 9;
-
-        $e = round($e, $precision, PHP_ROUND_HALF_DOWN);
-        $n = round($n, $precision, PHP_ROUND_HALF_DOWN);
+        $n = self::UTM_SCALE_CENTRAL_MERIDIAN * $y + ($this->latLng->getLatitude() < 0 ? 10_000_000 : 0);
 
         // 10. Compute factors p and 1 to order 8
         // $pPrime = 1;
@@ -164,8 +160,7 @@ readonly class LatLngToUTM
         // $gammaPrimePrime = atan2($qPrime, $pPrime);
         // $gamma = $gammaPrime + $gammaPrimePrime;
 
-        return sprintf(
-            "%2d%s %.{$precision}f %.{$precision}f",
+        return new UTM(
             $zone,
             $letter,
             $e,

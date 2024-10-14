@@ -8,8 +8,9 @@ it('can return the enum cases', function () {
     $cases = CoordinateFormat::values();
 
     expect($cases)->toBeArray()
-        ->toHaveCount(3)
+        ->toHaveCount(4)
         ->toEqual([
+            'LatLng',
             'DMS',
             'DDM',
             'UTM',

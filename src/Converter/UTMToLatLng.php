@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Katalam\Coordinates\Converter;
 
+use Katalam\Coordinates\Dtos\LatLng;
+use Katalam\Coordinates\Dtos\UTM;
+
 readonly class UTMToLatLng
 {
     public const UTM_SCALE_CENTRAL_MERIDIAN = 0.999_6;
@@ -15,21 +18,12 @@ readonly class UTMToLatLng
     public const LATITUDE_BANDS = 'CDEFGHJKLMNPQRSTUVWXX'; // X is used for 80°N to 84°N
 
     public function __construct(
-        private int $zone,
-        private string $latitudeBand,
-        private float $easting,
-        private float $northing,
-        private int $precision = -1,
+        private UTM $utm,
     ) {}
 
-    public static function make(
-        int $zone,
-        string $latitudeBand,
-        float $easting,
-        float $northing,
-        int $precision = -1,
-    ): self {
-        return new self($zone, $latitudeBand, $easting, $northing, $precision);
+    public static function make(UTM $utm): self
+    {
+        return new self($utm);
     }
 
     /**
@@ -40,7 +34,7 @@ readonly class UTMToLatLng
      *
      * @see https://www.mygeodesy.id.au/documents/Karney-Krueger%20equations.pdf
      */
-    public function run(): string
+    public function run(): LatLng
     {
         // 1. Compute the ellipsoidal parameters
         $eccentricity = sqrt(self::MAGNITUDE_OF_FLATTENING * (2 - self::MAGNITUDE_OF_FLATTENING));
@@ -86,10 +80,10 @@ readonly class UTMToLatLng
         ];
 
         // 5. Compute the transverse Mercator X, Y coordinates
-        $x = ($this->easting - 500_000) / self::UTM_SCALE_CENTRAL_MERIDIAN;
-        $indexLetter = strpos(self::LATITUDE_BANDS, $this->latitudeBand);
+        $x = ($this->utm->getEasting() - 500_000) / self::UTM_SCALE_CENTRAL_MERIDIAN;
+        $indexLetter = strpos(self::LATITUDE_BANDS, $this->utm->getLatitudeBand());
         $isSouth = $indexLetter <= 10;
-        $y = ($this->northing - ($isSouth ? 10_000_000 : 0)) / self::UTM_SCALE_CENTRAL_MERIDIAN;
+        $y = ($this->utm->getNorthing() - ($isSouth ? 10_000_000 : 0)) / self::UTM_SCALE_CENTRAL_MERIDIAN;
 
         // 6. Compute the transverse Mercator (TM) ratio xi and eta
         $xi = $y / $A;
@@ -147,23 +141,10 @@ readonly class UTMToLatLng
         // $gammaPrimePrime = atan2($qPrime, $pPrime);
         // $gamma = $gammaPrime + $gammaPrimePrime;
 
-        $longitudeOffset = deg2rad(($this->zone - 1) * 6 - 180 + 3);
+        $longitudeOffset = deg2rad(($this->utm->getZone() - 1) * 6 - 180 + 3);
         $longitude = rad2deg($longitudeRad + $longitudeOffset);
         $latitude = rad2deg($latitudeRad);
 
-        $precision = $this->precision > -1 ? $this->precision : 6;
-
-        $longitude = round($longitude, $precision, PHP_ROUND_HALF_DOWN);
-        $latitude = round($latitude, $precision, PHP_ROUND_HALF_DOWN);
-
-        $letterLng = $longitude < 0 ? 'W' : 'E';
-        $letterLat = $latitude < 0 ? 'S' : 'N';
-
-        return sprintf("%s %.{$precision}f %s %.{$precision}f",
-            $letterLat,
-            $latitude,
-            $letterLng,
-            $longitude,
-        );
+        return new LatLng($latitude, $longitude);
     }
 }

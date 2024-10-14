@@ -4,60 +4,52 @@ declare(strict_types=1);
 
 namespace Katalam\Coordinates\Dtos;
 
-use Katalam\Coordinates\Converter\LatLngToDDM;
-use Katalam\Coordinates\Converter\LatLngToDMS;
-use Katalam\Coordinates\Converter\LatLngToUTM;
-use Katalam\Coordinates\Converter\UTMToLatLng;
+use Katalam\Coordinates\Dtos\Concerns\BaseCoordinate;
 use Katalam\Coordinates\Enums\CoordinateFormat;
 
 class Coordinate
 {
-    protected float $latitude;
+    protected BaseCoordinate $value;
 
-    protected float $longitude;
-
-    public function __construct(float $latitude = 0, float $longitude = 0)
+    public function __construct(BaseCoordinate $value)
     {
-        $this->latitude = $latitude;
-        $this->longitude = $longitude;
+        $this->value = $value;
     }
 
-    public static function fromUTM(string $utm): self
+    public static function make(BaseCoordinate $value): self
     {
-        $utmArray = explode(' ', $utm);
-        $zone = (int) substr($utmArray[0], 0, -1);
-        $latitudeBand = substr($utmArray[0], -1);
-        $easting = (float) $utmArray[1];
-        $northing = (float) $utmArray[2];
-
-        $coordinate = UTMToLatLng::make($zone, $latitudeBand, $easting, $northing)->run();
-
-        $coordinate = explode(' ', $coordinate);
-
-        return new self((float) $coordinate[1], (float) $coordinate[3]);
+        return new self($value);
     }
 
-    public static function make(float $latitude = 0, float $longitude = 0): self
+    public static function fromLatLng(float $latitude, float $longitude): self
     {
-        return new self($latitude, $longitude);
+        return new self(new LatLng($latitude, $longitude));
     }
 
-    public function getLatitude(): float
+    public static function fromDDM(int $degreesLatitude, float $minutesLatitude, string $hemisphereLatitude, int $degreesLongitude, int $minutesLongitude, string $hemisphereLongitude): self
     {
-        return $this->latitude;
+        return new self(new DDM($degreesLatitude, $minutesLatitude, $hemisphereLatitude, $degreesLongitude, $minutesLongitude, $hemisphereLongitude));
     }
 
-    public function getLongitude(): float
+    public static function fromDMS(int $degreesLatitude, int $minutesLatitude, float $secondsLatitude, string $hemisphereLatitude, int $degreesLongitude, int $minutesLongitude, float $secondsLongitude, string $hemisphereLongitude): self
     {
-        return $this->longitude;
+        return new self(new DMS($degreesLatitude, $minutesLatitude, $secondsLatitude, $hemisphereLatitude, $degreesLongitude, $minutesLongitude, $secondsLongitude, $hemisphereLongitude));
+    }
+
+    public static function fromUTM(int $zone, string $band, float $easting, float $northing): self
+    {
+        return new self(new UTM($zone, $band, $easting, $northing));
     }
 
     public function format(CoordinateFormat $format, int $precision = -1): string
     {
-        return match ($format) {
-            CoordinateFormat::DMS => LatLngToDMS::make($this->latitude, $this->longitude, $precision)->run(),
-            CoordinateFormat::DDM => LatLngToDDM::make($this->latitude, $this->longitude, $precision)->run(),
-            CoordinateFormat::UTM => LatLngToUTM::make($this->latitude, $this->longitude, $precision)->run(),
-        };
+        return $this->value->format($format, $precision);
+    }
+
+    public function convert(CoordinateFormat $format): self
+    {
+        $this->value = $this->value->convert($format);
+
+        return $this;
     }
 }

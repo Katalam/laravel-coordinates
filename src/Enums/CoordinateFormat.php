@@ -6,6 +6,7 @@ namespace Katalam\Coordinates\Enums;
 
 enum CoordinateFormat: string
 {
+    case LatLng = 'LatLng';
     case DMS = 'DMS';
     case DDM = 'DDM';
     case UTM = 'UTM';
@@ -18,6 +19,7 @@ enum CoordinateFormat: string
     public function toString(): string
     {
         return match ($this) {
+            self::LatLng => 'Latitude Longitude',
             self::DMS => 'Degrees Minutes Seconds',
             self::DDM => 'Degrees Decimal Minutes',
             self::UTM => 'Universal Transverse Mercator',
