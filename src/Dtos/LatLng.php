@@ -49,10 +49,15 @@ class LatLng extends BaseCoordinate
 
     public function toString(int $precision = -1): string
     {
-        return sprintf('%f° %s %f° %s',
-            abs($this->getLatitude()),
+        $precision = $this->getPrecision($precision);
+
+        $latitude = round(abs($this->getLatitude()), $precision, PHP_ROUND_HALF_DOWN);
+        $longitude = round(abs($this->getLongitude()), $precision, PHP_ROUND_HALF_DOWN);
+
+        return sprintf("%.{$precision}f° %s %.{$precision}f° %s",
+            $latitude,
             $this->getHemisphereLatitude(),
-            abs($this->getLongitude()),
+            $longitude,
             $this->getHemisphereLongitude(),
         );
     }
