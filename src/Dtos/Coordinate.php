@@ -53,6 +53,11 @@ class Coordinate
         return $this;
     }
 
+    public function getValue(): BaseCoordinate
+    {
+        return $this->value;
+    }
+
     public function jsonSerialize(): string
     {
         return $this->toString();
