@@ -10,6 +10,7 @@ enum CoordinateFormat: string
     case DMS = 'DMS';
     case DDM = 'DDM';
     case UTM = 'UTM';
+    case GeoHash = 'GeoHash';
 
     public static function values(): array
     {
@@ -23,6 +24,7 @@ enum CoordinateFormat: string
             self::DMS => 'Degrees Minutes Seconds',
             self::DDM => 'Degrees Decimal Minutes',
             self::UTM => 'Universal Transverse Mercator',
+            self::GeoHash => 'GeoHash',
         };
     }
 }

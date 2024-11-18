@@ -6,6 +6,7 @@ namespace Katalam\Coordinates\Dtos;
 
 use Katalam\Coordinates\Converter\LatLngToDDM;
 use Katalam\Coordinates\Converter\LatLngToDMS;
+use Katalam\Coordinates\Converter\LatLngToGeoHash;
 use Katalam\Coordinates\Converter\LatLngToUTM;
 use Katalam\Coordinates\Dtos\Concerns\BaseCoordinate;
 use Katalam\Coordinates\Enums\CoordinateFormat;
@@ -68,6 +69,7 @@ class LatLng extends BaseCoordinate
             CoordinateFormat::DMS => LatLngToDMS::make($this)->run(),
             CoordinateFormat::DDM => LatLngToDDM::make($this)->run(),
             CoordinateFormat::UTM => LatLngToUTM::make($this)->run(),
+            CoordinateFormat::GeoHash => LatLngToGeoHash::make($this)->run(),
             default => $this,
         };
     }
